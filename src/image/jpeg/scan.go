@@ -8,6 +8,27 @@ import (
 	"image"
 )
 
+var yVals = [64]int{
+	0,0,0,0,0,0,0,0,
+	1,1,1,1,1,1,1,1,
+	2,2,2,2,2,2,2,2,
+	3,3,3,3,3,3,3,3,
+	4,4,4,4,4,4,4,4,
+	5,5,5,5,5,5,5,5,
+	6,6,6,6,6,6,6,6,
+	7,7,7,7,7,7,7,7}
+
+var xVals = [64]int{
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+	0,1,2,3,4,5,6,7,
+}
+
 // makeImg allocates and initializes the destination image.
 func (d *decoder) makeImg(mxx, myy int) {
 	if d.nComp == 1 {
@@ -485,20 +506,18 @@ func (d *decoder) reconstructBlock(b *block, bx, by, compIndex int) error {
 		}
 	}
 	// Level shift by +128, clip to [0, 255], and write to dst.
-	for y := 0; y < 8; y++ {
-		y8 := y * 8
-		yStride := y * stride
-		for x := 0; x < 8; x++ {
-			c := b[y8+x]
-			if c < -128 {
-				c = 0
-			} else if c > 127 {
-				c = 255
-			} else {
-				c += 128
-			}
-			dst[yStride+x] = uint8(c)
+	var c int32
+	for x := 0; x < 64; x++ {
+		c = b[x]
+		switch {
+		case c >= -128 && c <= 127:
+			dst[yVals[x]*stride+xVals[x]] = uint8(c+128)
+		case c > 127:
+			dst[yVals[x]*stride+xVals[x]] = ^uint8(0)
+		default:
+			dst[yVals[x]*stride+xVals[x]] = 0
 		}
 	}
+
 	return nil
 }
